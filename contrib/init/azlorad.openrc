@@ -1,0 +1,93 @@
+#!/sbin/openrc-run
+
+# backward compatibility for existing gentoo layout 
+#
+if [ -d "/var/lib/azlora/.azlora" ]; then
+	AZLORAD_DEFAULT_DATADIR="/var/lib/azlora/.azlora"
+else
+	AZLORAD_DEFAULT_DATADIR="/var/lib/azlorad"
+fi
+
+AZLORAD_CONFIGFILE=${AZLORAD_CONFIGFILE:-/etc/azlora/azlora.conf}
+AZLORAD_PIDDIR=${AZLORAD_PIDDIR:-/var/run/azlorad}
+AZLORAD_PIDFILE=${AZLORAD_PIDFILE:-${AZLORAD_PIDDIR}/azlorad.pid}
+AZLORAD_DATADIR=${AZLORAD_DATADIR:-${AZLORAD_DEFAULT_DATADIR}}
+AZLORAD_USER=${AZLORAD_USER:-${AZLORA_USER:-azlora}}
+AZLORAD_GROUP=${AZLORAD_GROUP:-azlora}
+AZLORAD_BIN=${AZLORAD_BIN:-/usr/bin/azlorad}
+AZLORAD_NICE=${AZLORAD_NICE:-${NICELEVEL:-0}}
+AZLORAD_OPTS="${AZLORAD_OPTS:-${AZLORA_OPTS}}"
+
+name="Azlora Core Daemon"
+description="Azlora cryptocurrency P2P network daemon"
+
+command="/usr/bin/azlorad"
+command_args="-pid=\"${AZLORAD_PIDFILE}\" \
+		-conf=\"${AZLORAD_CONFIGFILE}\" \
+		-datadir=\"${AZLORAD_DATADIR}\" \
+		-daemon \
+		${AZLORAD_OPTS}"
+
+required_files="${AZLORAD_CONFIGFILE}"
+start_stop_daemon_args="-u ${AZLORAD_USER} \
+			-N ${AZLORAD_NICE} -w 2000"
+pidfile="${AZLORAD_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${AZLORAD_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${AZLORAD_USER}:${AZLORAD_GROUP}" \
+	"${AZLORAD_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${AZLORAD_USER}:${AZLORAD_GROUP}" \
+	"${AZLORAD_PIDDIR}"
+
+	checkpath -f \
+	-o "${AZLORAD_USER}:${AZLORAD_GROUP}" \
+	-m 0660 \
+	"${AZLORAD_CONFIGFILE}"
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if grep -qs '^rpcuser=' "${AZLORAD_CONFIGFILE}" && \
+		! grep -qs '^rpcpassword=' "${AZLORAD_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run azlorad."
+		eerror "The setting must appear in ${AZLORAD_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following "
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"Azlora Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}

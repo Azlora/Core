@@ -1,0 +1,33 @@
+# /etc/conf.d/azlorad: config file for /etc/init.d/azlorad
+
+# Config file location
+#AZLORAD_CONFIGFILE="/etc/azlora/azlora.conf"
+
+# What directory to write pidfile to?  (created and owned by $AZLORAD_USER)
+#AZLORAD_PIDDIR="/var/run/azlorad"
+
+# What filename to give the pidfile
+#AZLORAD_PIDFILE="${AZLORAD_PIDDIR}/azlorad.pid"
+
+# Where to write azlorad data (be mindful that the blockchain is large)
+#AZLORAD_DATADIR="/var/lib/azlorad"
+
+# User and group to own azlorad process
+#AZLORAD_USER="azlora"
+#AZLORAD_GROUP="azlora"
+
+# Path to azlorad executable
+#AZLORAD_BIN="/usr/bin/azlorad"
+
+# Nice value to run azlorad under
+#AZLORAD_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+#AZLORAD_OPTS=""
+
+# The timeout in seconds OpenRC will wait for azlorad to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+AZLORAD_SIGTERM_TIMEOUT=600

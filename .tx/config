@@ -1,0 +1,7 @@
+[main]
+host = https://www.transifex.com
+
+[o:azlora:p:azlora:r:qt-translation-025x]
+file_filter = src/qt/locale/azlora_<lang>.xlf
+source_file = src/qt/locale/azlora_en.xlf
+source_lang = en
